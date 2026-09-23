@@ -95,6 +95,13 @@ Rectangle {
             finalCode = "import QtQuick\nimport QtQuick.Controls\nimport QtQuick.Layouts\n" + targetCode
         }
 
+        // Al cargar un archivo suelto con setData(), Qt no hereda las
+        // importaciones de su archivo original. Importar el directorio de
+        // origen permite resolver componentes hermanos como SkeuoButton.
+        if (previewMode === "file" && targetPath) {
+            finalCode = 'import "."\n' + finalCode
+        }
+
         if (typeof QmlSandbox !== "undefined") {
             var res = QmlSandbox.compileAndCreate(finalCode, baseUrl, sandboxWrapper.targetItem)
             if (res.error && res.error.length > 0) {

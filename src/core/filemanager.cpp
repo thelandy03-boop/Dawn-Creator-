@@ -5,6 +5,9 @@
 #include <QTextStream>
 #include <QStringConverter>
 #include <QProcess>
+#include <QUrl>
+#include <QGuiApplication>
+#include <QClipboard>
 
 FileManager::FileManager(QObject *parent) : QObject(parent)
 {
@@ -13,10 +16,25 @@ FileManager::FileManager(QObject *parent) : QObject(parent)
 
 QString FileManager::currentFolder() const { return m_currentFolder; }
 
+QString FileManager::cleanPath(const QString &path)
+{
+    const QUrl url(path);
+    return url.isLocalFile() ? url.toLocalFile() : path;
+}
+
+QString FileManager::localFilePath(const QString &path) const
+{
+    return cleanPath(path);
+}
+
+QString FileManager::localFileUrl(const QString &path) const
+{
+    return QUrl::fromLocalFile(cleanPath(path)).toString();
+}
+
 void FileManager::setCurrentFolder(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     if (m_currentFolder == clean) return;
     m_currentFolder = clean;
     emit currentFolderChanged();
@@ -30,8 +48,7 @@ QString FileManager::projectName() const
 
 QString FileManager::readFile(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
 
     QFile file(clean);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -50,8 +67,7 @@ QString FileManager::readFile(const QString &path)
 
 bool FileManager::writeFile(const QString &path, const QString &content)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
 
     QFile file(clean);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -70,8 +86,7 @@ bool FileManager::writeFile(const QString &path, const QString &content)
 
 bool FileManager::createFile(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     if (QFile::exists(clean)) {
         emit error("Ya existe: " + clean);
         return false;
@@ -87,15 +102,13 @@ bool FileManager::createFile(const QString &path)
 
 bool FileManager::createFolder(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     return QDir().mkpath(clean);
 }
 
 bool FileManager::deletePath(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     QFileInfo info(clean);
     if (info.isDir())
         return QDir(clean).removeRecursively();
@@ -104,10 +117,8 @@ bool FileManager::deletePath(const QString &path)
 
 bool FileManager::renamePath(const QString &oldPath, const QString &newPath)
 {
-    QString cleanOld = oldPath;
-    cleanOld.remove("file://");
-    QString cleanNew = newPath;
-    cleanNew.remove("file://");
+    const QString cleanOld = cleanPath(oldPath);
+    const QString cleanNew = cleanPath(newPath);
 
     QFileInfo info(cleanOld);
     if (!info.exists()) {
@@ -129,8 +140,7 @@ bool FileManager::renamePath(const QString &oldPath, const QString &newPath)
 
 void FileManager::runFile(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
 
     QFileInfo info(clean);
     if (!info.exists() || info.isDir()) {
@@ -141,11 +151,14 @@ void FileManager::runFile(const QString &path)
     QString ext = info.suffix().toLower();
 
     if (ext == "qml") {
-        QProcess::startDetached("qml6", QStringList() << clean, info.absolutePath());
+        if (!QProcess::startDetached("qml6", QStringList() << clean, info.absolutePath()))
+            emit error("No se pudo iniciar qml6. Comprueba que Qt 6 esté instalado y disponible en PATH.");
     } else if (ext == "py") {
-        QProcess::startDetached("python3", QStringList() << clean, info.absolutePath());
+        if (!QProcess::startDetached("python3", QStringList() << clean, info.absolutePath()))
+            emit error("No se pudo iniciar python3. Comprueba que Python esté instalado y disponible en PATH.");
     } else if (ext == "sh") {
-        QProcess::startDetached("bash", QStringList() << clean, info.absolutePath());
+        if (!QProcess::startDetached("bash", QStringList() << clean, info.absolutePath()))
+            emit error("No se pudo iniciar bash. Comprueba que Bash esté instalado y disponible en PATH.");
     } else {
         runProject();
     }
@@ -153,8 +166,7 @@ void FileManager::runFile(const QString &path)
 
 void FileManager::runProject()
 {
-    QString root = m_currentFolder;
-    root.remove("file://");
+    const QString root = cleanPath(m_currentFolder);
 
     // 1. Buscar primero un ejecutable C++ compilado en build/
     QString buildDir = root + "/build";
@@ -165,7 +177,8 @@ void FileManager::runProject()
             if (info.isExecutable() && !info.fileName().endsWith(".sh") 
                                     && !info.fileName().endsWith(".so")
                                     && !info.fileName().contains("CMake")) {
-                QProcess::startDetached(info.absoluteFilePath(), QStringList(), buildDir);
+                if (!QProcess::startDetached(info.absoluteFilePath(), QStringList(), buildDir))
+                    emit error("No se pudo iniciar el ejecutable: " + info.absoluteFilePath());
                 return;
             }
         }
@@ -187,7 +200,8 @@ void FileManager::runProject()
     for (const QString &qmlPath : qmlMains) {
         if (QFile::exists(qmlPath)) {
             QFileInfo info(qmlPath);
-            QProcess::startDetached("qml6", QStringList() << qmlPath, info.absolutePath());
+            if (!QProcess::startDetached("qml6", QStringList() << qmlPath, info.absolutePath()))
+                emit error("No se pudo iniciar qml6. Comprueba que Qt 6 esté instalado y disponible en PATH.");
             return;
         }
     }
@@ -197,16 +211,14 @@ void FileManager::runProject()
 
 bool FileManager::fileExists(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     return QFile::exists(clean);
 }
 
 QVariantList FileManager::listDirectory(const QString &path)
 {
     QVariantList items;
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     QDir dir(clean);
     if (!dir.exists()) return items;
 
@@ -234,21 +246,24 @@ QVariantList FileManager::listDirectory(const QString &path)
 
 QString FileManager::fileName(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     return QFileInfo(clean).fileName();
 }
 
 QString FileManager::fileExtension(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     return QFileInfo(clean).suffix().toLower();
 }
 
 QString FileManager::parentDir(const QString &path)
 {
-    QString clean = path;
-    clean.remove("file://");
+    const QString clean = cleanPath(path);
     return QFileInfo(clean).absolutePath();
+}
+
+QString FileManager::clipboardTextB64() const
+{
+    const QString text = QGuiApplication::clipboard()->text(QClipboard::Clipboard);
+    return QString::fromLatin1(text.toUtf8().toBase64());
 }

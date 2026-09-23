@@ -9,6 +9,7 @@
 #include "../core/projectmodel.h"
 #include "../core/terminalmanager.h"
 #include "../core/qmlsandbox.h"
+#include "../core/qmllanguagemanager.h"
 
 int main(int argc, char *argv[])
 {
@@ -18,12 +19,14 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setOrganizationName("Dawn");
     app.setApplicationName("Dawn Studio");
+    app.setApplicationVersion(QStringLiteral(DAWN_APP_VERSION));
     QQuickStyle::setStyle("Basic");
 
     PluginManager pluginManager;
     FileManager fileManager;
     ProjectModel projectModel;
     TerminalManager terminalManager;
+    QmlLanguageManager qmlLanguageManager;
 
     QQmlApplicationEngine engine;
     QmlSandbox qmlSandbox(&engine);
@@ -44,6 +47,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("ProjectModel", &projectModel);
     engine.rootContext()->setContextProperty("TerminalManager", &terminalManager);
     engine.rootContext()->setContextProperty("QmlSandbox", &qmlSandbox);
+    engine.rootContext()->setContextProperty("QmlLanguageManager", &qmlLanguageManager);
+    engine.rootContext()->setContextProperty("AppVersion", app.applicationVersion());
 
     engine.addImportPath("qrc:/qt/qml");
     const QUrl url(QStringLiteral("qrc:/qt/qml/DawnStudio/src/qml/Main.qml"));

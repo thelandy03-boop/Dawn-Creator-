@@ -116,6 +116,32 @@ Item {
             }
         }
 
+        // ── paste ──
+        Item {
+            visible: root.name === "paste"
+            anchors.fill: parent
+            Rectangle {
+                x: parent.width * 0.22; y: parent.height * 0.18
+                width: parent.width * 0.60; height: parent.height * 0.72
+                radius: 1; color: "transparent"
+                border.color: root.color; border.width: 1.4
+            }
+            Rectangle {
+                x: parent.width * 0.36; y: parent.height * 0.08
+                width: parent.width * 0.32; height: parent.height * 0.20
+                radius: 2; color: "#222528"
+                border.color: root.color; border.width: 1.2
+            }
+            Rectangle {
+                x: parent.width * 0.34; y: parent.height * 0.48
+                width: parent.width * 0.34; height: 1.4; color: root.color
+            }
+            Rectangle {
+                x: parent.width * 0.34; y: parent.height * 0.65
+                width: parent.width * 0.25; height: 1.4; color: root.color
+            }
+        }
+
         // ── play ──
         Shape {
             visible: root.name === "play"

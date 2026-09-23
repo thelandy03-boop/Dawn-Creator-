@@ -20,6 +20,9 @@ public:
     void setCurrentFolder(const QString &path);
     QString projectName() const;
 
+    Q_INVOKABLE QString localFilePath(const QString &path) const;
+    Q_INVOKABLE QString localFileUrl(const QString &path) const;
+
     Q_INVOKABLE QString readFile(const QString &path);
     Q_INVOKABLE bool writeFile(const QString &path, const QString &content);
     Q_INVOKABLE bool createFile(const QString &path);
@@ -33,6 +36,7 @@ public:
     Q_INVOKABLE QString fileName(const QString &path);
     Q_INVOKABLE QString fileExtension(const QString &path);
     Q_INVOKABLE QString parentDir(const QString &path);
+    Q_INVOKABLE QString clipboardTextB64() const;
 
 signals:
     void currentFolderChanged();
@@ -41,6 +45,7 @@ signals:
     void fileSaved(const QString &path);
 
 private:
+    static QString cleanPath(const QString &path);
     QString m_currentFolder;
 };
 

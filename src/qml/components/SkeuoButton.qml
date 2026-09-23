@@ -9,6 +9,7 @@ Rectangle {
     property string label: ""
     property bool isActive: false
     property bool isPrimary: false
+    property string toolTipText: ""
     signal clicked()
 
     // Dimensiones implícitas para que RowLayout/ColumnLayout respeten el tamaño exacto
@@ -17,6 +18,10 @@ Rectangle {
     width: implicitWidth
     height: implicitHeight
     radius: Theme.radius
+    opacity: enabled ? 1.0 : 0.5
+
+    ToolTip.visible: toolTipText !== "" && ma.containsMouse
+    ToolTip.text: toolTipText
 
     property bool isDown: ma.pressed || isActive
 
@@ -64,6 +69,8 @@ Rectangle {
     MouseArea {
         id: ma
         anchors.fill: parent
+        enabled: root.enabled
+        hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
     }

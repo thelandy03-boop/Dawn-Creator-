@@ -104,35 +104,40 @@ QVariantMap QmlSandbox::compileAndCreate(const QString &rawCode, const QString &
     resultItem->setParentItem(targetParent);
 
     if (isWindow) {
-        // En modo Proyecto (Main.qml), la UI ocupa el 100% del panel lateral sin escala diminuta
+        // En modo Proyecto, una ventana representa el viewport completo.
         resultItem->setWidth(targetParent->width());
         resultItem->setHeight(targetParent->height());
         resultItem->setScale(1.0);
         resultItem->setX(0);
         resultItem->setY(0);
     } else {
-        // En modo Archivo (componentes sueltos como AppTopBar), escala proporcionalmente si es más ancho
-        qreal itemW = (resultItem->implicitWidth() > 0) ? resultItem->implicitWidth() : resultItem->width();
-        qreal itemH = (resultItem->implicitHeight() > 0) ? resultItem->implicitHeight() : resultItem->height();
+        // En modo Archivo, ajusta componentes sueltos al lienzo y los centra.
+        const qreal itemW = resultItem->implicitWidth() > 0
+            ? resultItem->implicitWidth() : resultItem->width();
+        const qreal itemH = resultItem->implicitHeight() > 0
+            ? resultItem->implicitHeight() : resultItem->height();
+        const qreal designWidth = itemW > 0 ? itemW : 680;
+        const qreal designHeight = itemH > 0 ? itemH : 400;
 
-        if (itemW <= 0) itemW = 680;
-        if (itemH <= 0) itemH = targetParent->height();
+        resultItem->setWidth(designWidth);
+        resultItem->setHeight(designHeight);
+        resultItem->setTransformOrigin(QQuickItem::TopLeft);
 
-        resultItem->setWidth(itemW);
-        resultItem->setHeight(itemH);
+        auto fitAndCenter = [resultItem, targetParent, designWidth, designHeight]() {
+            const qreal canvasWidth = targetParent->width();
+            const qreal canvasHeight = targetParent->height();
+            if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        qreal parentW = targetParent->width();
-        if (parentW > 0 && itemW > parentW) {
-            qreal scaleFactor = parentW / itemW;
-            resultItem->setScale(scaleFactor);
-            resultItem->setTransformOrigin(QQuickItem::TopLeft);
-            resultItem->setX(0);
-            resultItem->setY(0);
-        } else {
-            resultItem->setScale(1.0);
-            resultItem->setX(0);
-            resultItem->setY(0);
-        }
+            const qreal fitScale = qMin(1.0, qMin(canvasWidth / designWidth,
+                                                  canvasHeight / designHeight));
+            resultItem->setScale(fitScale);
+            resultItem->setX((canvasWidth - designWidth * fitScale) / 2.0);
+            resultItem->setY((canvasHeight - designHeight * fitScale) / 2.0);
+        };
+
+        fitAndCenter();
+        QObject::connect(targetParent, &QQuickItem::widthChanged, createdObj, fitAndCenter);
+        QObject::connect(targetParent, &QQuickItem::heightChanged, createdObj, fitAndCenter);
     }
 
     resultMap["item"] = QVariant::fromValue<QQuickItem*>(resultItem);

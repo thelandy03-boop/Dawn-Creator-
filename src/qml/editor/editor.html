@@ -1,60 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <link rel="stylesheet" href="codemirror.css">
-  <link rel="stylesheet" href="dracula.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <style>
-    html, body, .CodeMirror {
+    html, body, #editor {
+      width: 100%;
       height: 100%;
       margin: 0;
       padding: 0;
-      background-color: #0d0e10 !important;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
-      font-size: 13px;
+      overflow: hidden;
+      background: #282a36;
+    }
+    .cm-editor {
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+      touch-action: pan-x pan-y;
+    }
+    .cm-content {
+      min-height: 100%;
     }
   </style>
 </head>
 <body>
-  <textarea id="code"></textarea>
-  <script src="codemirror.js"></script>
-  <script src="javascript.js"></script>
+  <div id="editor"></div>
+  <script src="codemirror6.bundle.js"></script>
   <script>
-    var isSettingCode = false;
-    var seq = 0;
+    (function() {
+      const { EditorState, EditorView, languageExtension, sharedExtensions, qmlLspExtensions,
+        setDiagnostics, lspCallbacks, setActiveLspMode, setActiveLspPath, setLspStatus, setActiveEditorView } = window.DawnCodeMirror6;
+      let isSettingCode = false;
+      let sequence = 0;
 
-    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-      lineNumbers: true,
-      theme: "dracula",
-      mode: "javascript",
-      tabSize: 4,
-      indentUnit: 4,
-      lineWrapping: true
-    });
-
-    // Detectar cambios en tiempo real
-    editor.on("change", function(cm, changeObj) {
-      if (isSettingCode) return;
-      seq = (seq + 1) % 10000;
-      document.title = "docChange:" + seq;
-    });
-
-    window.setCodeB64 = function(b64) {
-      isSettingCode = true;
-      try {
-        var bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        var text = new TextDecoder('utf-8').decode(bytes);
-        editor.setValue(text);
-        editor.clearHistory();
-      } catch(e) {
-        console.error(e);
+      function createState(text, mode) {
+        setActiveLspMode(mode);
+        return EditorState.create({
+          doc: text,
+          extensions: [
+            ...sharedExtensions,
+            languageExtension(mode),
+            ...(mode === "qml" ? qmlLspExtensions() : []),
+            EditorView.updateListener.of(update => {
+              if (!isSettingCode && update.docChanged) {
+                sequence = (sequence + 1) % 10000;
+                document.title = "docChange:" + sequence;
+              }
+            })
+          ]
+        });
       }
-      isSettingCode = false;
-    };
 
-    window.getCode = function() {
-      return editor.getValue();
-    };
+      const editor = new EditorView({
+        state: createState("", "text"),
+        parent: document.getElementById("editor")
+      });
+      setActiveEditorView(editor);
+
+      window.setCodeB64 = function(base64, mode) {
+        isSettingCode = true;
+        try {
+          const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+          const text = new TextDecoder("utf-8").decode(bytes);
+          editor.setState(createState(text, mode || "text"));
+        } catch (error) {
+          console.error("No se pudo cargar el texto en CodeMirror:", error);
+        } finally {
+          isSettingCode = false;
+        }
+      };
+
+      window.getCode = function() {
+        return editor.state.doc.toString();
+      };
+      window.insertTextB64 = function(base64) {
+        try {
+          const bytes = Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+          const text = new TextDecoder("utf-8").decode(bytes);
+          if (!text) return;
+          const selection = editor.state.selection.main;
+          const cursor = selection.from + text.length;
+          editor.dispatch({
+            changes: { from: selection.from, to: selection.to, insert: text },
+            selection: { anchor: cursor },
+            scrollIntoView: true,
+            userEvent: "input.paste"
+          });
+          editor.focus();
+        } catch (error) {
+          console.error("No se pudo pegar el texto del portapapeles:", error);
+        }
+      };
+      window.setLspPath = function(path) {
+        setActiveLspPath(path);
+        document.body.dataset.lspPath = path || "";
+      };
+      window.setLspStatus = function(status) { setLspStatus(status); };
+      window.setLspDiagnostics = function(payload) {
+        let message;
+        try { message = JSON.parse(payload || "{}"); } catch (_) { return; }
+        let uriPath = "";
+        try { uriPath = decodeURIComponent(new URL(message.uri).pathname); } catch (_) { return; }
+        if (uriPath !== document.body.dataset.lspPath) return;
+        const diagnostics = (message.diagnostics || []).map(d => {
+          const first = Math.min(editor.state.doc.lines, Math.max(1, (d.range?.start?.line || 0) + 1));
+          const last = Math.min(editor.state.doc.lines, Math.max(first, (d.range?.end?.line || 0) + 1));
+          const from = Math.min(editor.state.doc.length, editor.state.doc.line(first).from + (d.range?.start?.character || 0));
+          const to = Math.min(editor.state.doc.length, editor.state.doc.line(last).from + (d.range?.end?.character || 0));
+          return { from, to: Math.max(from, to), severity: d.severity === 1 ? "error" : d.severity === 2 ? "warning" : "info", message: d.message || "QML" };
+        });
+        editor.dispatch(setDiagnostics(editor.state, diagnostics));
+      };
+      window.applyLspResponse = function(id, payload) {
+        const callback = lspCallbacks.get(id);
+        if (!callback) return;
+        lspCallbacks.delete(id);
+        try { callback(JSON.parse(payload || "{}")); } catch (_) { callback({}); }
+      };
+    })();
   </script>
 </body>
 </html>

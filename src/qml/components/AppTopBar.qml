@@ -13,11 +13,13 @@ Rectangle {
 
     property bool isMobile: false
     property bool explorerOpen: false
+    property bool hasOpenFile: false
 
     signal toggleExplorer()
     signal openPlugins()
     signal openTerminal()
     signal saveClicked()
+    signal pasteClicked()
     signal runClicked()
 
     Rectangle {
@@ -86,6 +88,15 @@ Rectangle {
         }
 
         Item { Layout.fillWidth: true }
+
+        SkeuoButton {
+            iconName: "paste"
+            label: topBar.isMobile ? "" : "PEGAR TEXTO"
+            enabled: topBar.hasOpenFile
+            toolTipText: "Pegar texto del portapapeles"
+            Accessible.name: "Pegar texto del portapapeles en el editor"
+            onClicked: topBar.pasteClicked()
+        }
 
         SkeuoButton {
             iconName: "save"
