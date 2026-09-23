@@ -20,7 +20,7 @@ QT_ROOT="${DAWN_QT_ROOT:-$HOME/Qt/6.8.3}"
 JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
 QT_CMAKE="$QT_ROOT/android_arm64_v8a/bin/qt-cmake"
 HOST_QT="$QT_ROOT/gcc_64"
-RELEASE_APK="$BUILD_DIR/android-build/build/outputs/apk/release/android-build-release.apk"
+RELEASE_APK="$BUILD_DIR/android-build/build/outputs/apk/release/android-build-release-signed.apk"
 PUBLISHED_APK="$ROOT_DIR/android/Dawn-Studio-Android-arm64-v8a.apk"
 
 fail() { echo "Error: $*" >&2; exit 1; }
@@ -82,9 +82,9 @@ restore_uncommitted_version() {
         echo "Se restauró CMakeLists.txt desde Git." >&2
     fi
 }
-trap restore_uncommitted_version ERR
-trap 'restore_uncommitted_version; exit 130' INT
-trap 'restore_uncommitted_version; exit 143' TERM
+trap restore_uncommitted_version EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [[ "$VERSION" != "$CURRENT_VERSION" ]]; then
     VERSION_CHANGED=1
