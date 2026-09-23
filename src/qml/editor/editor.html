@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="codemirror.css">
+  <link rel="stylesheet" href="dracula.css">
+  <style>
+    html, body, .CodeMirror {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #0d0e10 !important;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <textarea id="code"></textarea>
+  <script src="codemirror.js"></script>
+  <script src="javascript.js"></script>
+  <script>
+    var isSettingCode = false;
+    var seq = 0;
+
+    var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+      lineNumbers: true,
+      theme: "dracula",
+      mode: "javascript",
+      tabSize: 4,
+      indentUnit: 4,
+      lineWrapping: true
+    });
+
+    // Detectar cambios en tiempo real
+    editor.on("change", function(cm, changeObj) {
+      if (isSettingCode) return;
+      seq = (seq + 1) % 10000;
+      document.title = "docChange:" + seq;
+    });
+
+    window.setCodeB64 = function(b64) {
+      isSettingCode = true;
+      try {
+        var bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
+        var text = new TextDecoder('utf-8').decode(bytes);
+        editor.setValue(text);
+        editor.clearHistory();
+      } catch(e) {
+        console.error(e);
+      }
+      isSettingCode = false;
+    };
+
+    window.getCode = function() {
+      return editor.getValue();
+    };
+  </script>
+</body>
+</html>

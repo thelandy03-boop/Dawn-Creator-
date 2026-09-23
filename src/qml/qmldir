@@ -1,0 +1,12 @@
+module DawnStudio
+singleton Theme 1.0 Theme.qml
+CodeEngine 1.0 components/CodeEngine.qml
+SkeuoButton 1.0 components/SkeuoButton.qml
+SkeuoPanel 1.0 components/SkeuoPanel.qml
+EditorTabBar 1.0 components/EditorTabBar.qml
+FileDrawer 1.0 panels/FileDrawer.qml
+PluginDrawer 1.0 panels/PluginDrawer.qml
+TerminalSheet 1.0 panels/TerminalSheet.qml
+AppIcon 1.0 icons/AppIcon.qml
+AppTopBar 1.0 components/AppTopBar.qml
+Main 1.0 Main.qml

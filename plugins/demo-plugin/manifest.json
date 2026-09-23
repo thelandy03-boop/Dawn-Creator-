@@ -1,0 +1,6 @@
+{
+    "name": "Generador de Colores",
+    "version": "1.0.0",
+    "description": "Plugin QML Dinámico",
+    "entryPoint": "ui.qml"
+}
