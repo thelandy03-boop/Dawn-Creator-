@@ -19,6 +19,7 @@ Rectangle {
         id: webView
         anchors.fill: parent
         url: typeof WebAssets !== "undefined" ? WebAssets.editorUrl : ""
+        settings.allowFileAccess: true
         settings.localContentCanAccessFileUrls: true
 
         onLoadingChanged: function(loadRequest) {

@@ -106,6 +106,7 @@ Item {
                 id: termWebView
                 anchors.fill: parent
                 url: typeof WebAssets !== "undefined" ? WebAssets.terminalUrl : ""
+                settings.allowFileAccess: true
                 settings.localContentCanAccessFileUrls: true
 
                 onLoadingChanged: function(loadRequest) {
