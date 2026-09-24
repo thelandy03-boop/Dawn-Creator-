@@ -9,15 +9,16 @@ ApplicationWindow {
     id: window
     width: 1100
     height: 720
-    minimumWidth: 360
-    minimumHeight: 500
+    minimumWidth: inSandbox ? 360 : 0
+    minimumHeight: inSandbox ? 500 : 0
     visible: true
     title: windowTitle()
     color: Theme.bgHardware
 
     readonly property bool inSandbox: typeof isSandbox !== "undefined" && isSandbox
     // Si está en el Sandbox, mantiene la interfaz completa de escritorio sin pasar a modo móvil
-    readonly property bool isMobile: !inSandbox && width < 720
+    readonly property bool compactHeight: height < 520
+    readonly property bool isMobile: !inSandbox && (width < 720 || compactHeight)
     property bool showLiveCanvas: false
     property bool updateRequired: false
     property string latestVersion: ""
@@ -163,7 +164,7 @@ ApplicationWindow {
     Drawer {
         id: terminalDrawer
         width: parent.width
-        height: Math.min(250, window.height * 0.5)
+        height: Math.min(250, window.height * (window.compactHeight ? 0.65 : 0.5))
         edge: Qt.BottomEdge
         modal: false
         dim: false
@@ -321,7 +322,7 @@ ApplicationWindow {
         // Status bar
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 24
+            Layout.preferredHeight: window.compactHeight ? 20 : 24
             color: Theme.bgBar
 
             Rectangle {
@@ -352,6 +353,7 @@ ApplicationWindow {
                     text: "UTF-8"
                     color: Theme.textMuted
                     font.pixelSize: 11
+                    visible: !window.compactHeight
                 }
 
                 Text {
@@ -366,6 +368,7 @@ ApplicationWindow {
                     font.pixelSize: 10
                     elide: Text.ElideRight
                     Layout.maximumWidth: 260
+                    visible: !window.compactHeight
                     ToolTip.visible: statusMouse.containsMouse
                     ToolTip.text: QmlLanguageManager.status
                     MouseArea { id: statusMouse; anchors.fill: parent; hoverEnabled: true }
@@ -377,6 +380,7 @@ ApplicationWindow {
                     text: FileManager.projectName || "Dawn Studio 0.3"
                     color: Theme.textMuted
                     font.pixelSize: 10
+                    visible: !window.compactHeight
                 }
             }
         }

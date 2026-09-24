@@ -9,6 +9,7 @@ Rectangle {
 
     property string currentPath: ""
     property bool ready: false
+    property string loadError: ""
     property int lspDocumentVersion: 0
     property string lspOpenPath: ""
 
@@ -17,10 +18,12 @@ Rectangle {
     WebView {
         id: webView
         anchors.fill: parent
-        url: "qrc:/qt/qml/DawnStudio/src/qml/editor/editor.html"
+        url: typeof WebAssets !== "undefined" ? WebAssets.editorUrl : ""
+        settings.localContentCanAccessFileUrls: true
 
         onLoadingChanged: function(loadRequest) {
             if (loadRequest.status === WebView.LoadSucceededStatus) {
+                engineRoot.loadError = ""
                 engineRoot.ready = true
                 engineRoot.notifyLspStatus()
                 if (typeof ProjectModel !== "undefined" && ProjectModel.currentIndex >= 0) {
@@ -30,6 +33,9 @@ Rectangle {
                         engineRoot.loadCode(f.content)
                     }
                 }
+            } else if (loadRequest.status === WebView.LoadFailedStatus) {
+                engineRoot.loadError = loadRequest.errorString || "No se pudo cargar el editor web."
+                console.error("Error al cargar CodeMirror:", engineRoot.loadError)
             }
         }
 
@@ -63,7 +69,7 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         color: Theme.screenBg
-        visible: typeof ProjectModel !== "undefined" ? (ProjectModel.count === 0) : true
+        visible: engineRoot.loadError !== "" || (typeof ProjectModel !== "undefined" ? (ProjectModel.count === 0) : true)
         z: 10
 
         Column {
@@ -71,7 +77,7 @@ Rectangle {
             spacing: 12
 
             Text {
-                text: "Dawn Studio"
+                text: engineRoot.loadError !== "" ? "No se pudo abrir el editor" : "Dawn Studio"
                 color: Theme.textMuted
                 font.pixelSize: 22
                 font.bold: true
@@ -79,11 +85,13 @@ Rectangle {
                 opacity: 0.5
             }
             Text {
-                text: "Abre un archivo con ››› o Ctrl+O"
+                text: engineRoot.loadError !== "" ? engineRoot.loadError : "Abre un archivo con ››› o Ctrl+O"
                 color: Theme.textMuted
                 font.pixelSize: 13
                 anchors.horizontalCenter: parent.horizontalCenter
                 opacity: 0.4
+                wrapMode: Text.WordWrap
+                width: Math.min(engineRoot.width - 32, 420)
             }
         }
     }

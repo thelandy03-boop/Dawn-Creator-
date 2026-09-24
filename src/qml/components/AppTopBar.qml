@@ -6,8 +6,8 @@ import "../icons"
 
 Rectangle {
     id: topBar
-    implicitHeight: Theme.barHeight
-    implicitWidth: 680
+    implicitHeight: isMobile ? 40 : Theme.barHeight
+    implicitWidth: isMobile ? 0 : 680
     height: implicitHeight
     color: Theme.bgBar
 
@@ -31,14 +31,14 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 6
-        anchors.rightMargin: 8
-        spacing: 8
+        anchors.leftMargin: topBar.isMobile ? 4 : 6
+        anchors.rightMargin: topBar.isMobile ? 4 : 8
+        spacing: topBar.isMobile ? 4 : 8
 
         // Botón 3 flechas (›››)
         Rectangle {
             id: arrowsBtn
-            implicitWidth: 40
+            implicitWidth: topBar.isMobile ? 32 : 40
             implicitHeight: 32
             width: implicitWidth
             height: implicitHeight

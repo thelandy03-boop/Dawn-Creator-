@@ -10,6 +10,7 @@
 #include "../core/terminalmanager.h"
 #include "../core/qmlsandbox.h"
 #include "../core/qmllanguagemanager.h"
+#include "../core/webassetmanager.h"
 
 int main(int argc, char *argv[])
 {
@@ -27,6 +28,7 @@ int main(int argc, char *argv[])
     ProjectModel projectModel;
     TerminalManager terminalManager;
     QmlLanguageManager qmlLanguageManager;
+    WebAssetManager webAssetManager;
 
     QQmlApplicationEngine engine;
     QmlSandbox qmlSandbox(&engine);
@@ -48,6 +50,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("TerminalManager", &terminalManager);
     engine.rootContext()->setContextProperty("QmlSandbox", &qmlSandbox);
     engine.rootContext()->setContextProperty("QmlLanguageManager", &qmlLanguageManager);
+    engine.rootContext()->setContextProperty("WebAssets", &webAssetManager);
     engine.rootContext()->setContextProperty("AppVersion", app.applicationVersion());
 
     engine.addImportPath("qrc:/qt/qml");

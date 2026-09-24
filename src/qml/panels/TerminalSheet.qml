@@ -105,7 +105,8 @@ Item {
             WebView {
                 id: termWebView
                 anchors.fill: parent
-                url: "qrc:/qt/qml/DawnStudio/src/qml/terminal/terminal.html"
+                url: typeof WebAssets !== "undefined" ? WebAssets.terminalUrl : ""
+                settings.localContentCanAccessFileUrls: true
 
                 onLoadingChanged: function(loadRequest) {
                     if (loadRequest.status === WebView.LoadSucceededStatus) {

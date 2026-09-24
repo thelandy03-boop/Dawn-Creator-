@@ -30,6 +30,8 @@ qt_add_executable(dawn-studio
     src/core/qmllanguagemanager.cpp
     src/core/qmlsandbox.h
     src/core/qmlsandbox.cpp
+    src/core/webassetmanager.h
+    src/core/webassetmanager.cpp
 )
 
 target_compile_definitions(dawn-studio PRIVATE DAWN_APP_VERSION=\"${PROJECT_VERSION}\")
