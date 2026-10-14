@@ -23,3 +23,8 @@ Dawn connects the editor to Qt's `qmlls` language server for QML diagnostics, co
 Build Dawn with a redistributable Qt 6.8 SDK. CMake rejects other Qt minor versions and its install step deploys Qt's runtime libraries and imported QML modules beside the app, so end users do not need to install Qt separately. Create the distributable folder with `cmake --install build --prefix dist` after a Release build, then package that folder for the target desktop OS. The Qt SDK used to create releases must support relocatable deployment; some Linux distribution Qt packages are intended only for system installation and cannot be bundled by this step.
 
 `qmlls` is a separate development tool. The packager can include it with `-DDAWN_QMLLS_EXECUTABLE=/path/to/qmlls`; Dawn then uses the bundled copy and deploys its Qt runtime dependencies. If it is not bundled, install Qt 6.8's QML Language Server or set `DAWN_QMLLS_PATH`. This repository currently targets Linux desktop; Windows, macOS, Android, and iOS need their own builds and packaging workflows before those users can install Dawn.
+
+
+
+
+XD
